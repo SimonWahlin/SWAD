@@ -581,11 +581,11 @@ Function ConvertTo-StringTree
     )
     Begin
     {
-        $Prefix     = '|--'
-        $PrefixLast = '`--'
-        $Spacer     = '|  '
-        $SpacerLast = '   '
-        $Out        = ''
+        $Prefix     = '{0}{1} ' -f ([char]0x2523),([char]0x254D)
+	$PrefixLast = '{0}{1} ' -f ([char]0x2517),([char]0x254D)
+	$Spacer     = '{0}  ' -f ([char]0x2503)
+	$SpacerLast = '   '
+	$Out        = ''
 
         $StandardNames = @('Name')
         $StandardChild = @('Members','MemberOf','Children')

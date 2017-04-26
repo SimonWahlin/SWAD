@@ -1,4 +1,4 @@
-﻿$PSDefaultParameterValues.Clear()
+$PSDefaultParameterValues.Clear()
 $GroupMembershipStart = ''
 
 function New-SWRandomPassword 
@@ -581,9 +581,9 @@ Function ConvertTo-StringTree
     )
     Begin
     {
-        $Prefix     = '{0}{1} ' -f ([char]0x2523),([char]0x254D)
-	$PrefixLast = '{0}{1} ' -f ([char]0x2517),([char]0x254D)
-	$Spacer     = '{0}  ' -f ([char]0x2503)
+        $Prefix     = '{0}{1} ' -f ([char]0x251C),([char]0x2500)
+	$PrefixLast = '{0}{1} ' -f ([char]0x2514),([char]0x2500)
+	$Spacer     = '{0}  ' -f ([char]0x2502)
 	$SpacerLast = '   '
 	$Out        = ''
 

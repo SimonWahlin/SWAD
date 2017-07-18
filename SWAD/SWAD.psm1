@@ -1488,48 +1488,99 @@ Function Restore-SWADTree
     }
 }
 
+<#
+    .SYNOPSIS
+    Test a credential
+
+    .DESCRIPTION
+    Test a credential object or a username and password against a machine or domain.
+    Can be used to validate service account passwords.
+
+    .PARAMETER Credential
+    Credential to test
+
+    .PARAMETER UserName
+    Username to test
+
+    .PARAMETER Password
+    Clear text password to test. 
+    ATT!: Be aware that the password is written to screen and memory in clear text
+
+    .PARAMETER ContextType
+    Set where to validate the credential.
+    Can be Domain, Machine or ApplicationDirectory
+
+    .PARAMETER Server
+    Set remote computer or domain to validate against.
+
+    .EXAMPLE
+    Test-SWADCredential -UserName svc-my-service -Password Kgse(70g!S.
+    True
+
+    .EXAMPLE
+    Test-SWADCredential -Credential $Cred
+    True
+#>
 function Test-SWADCredential 
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Credential')]
     Param
     (
-        [Parameter(mandatory)]
+        [Parameter(Mandatory=$true,ParameterSetName='Credential')]
+        [pscredential]
+        $Credential,
+        
+        [Parameter(Mandatory=$true,ParameterSetName='Cleartext')]
         [ValidateNotNullOrEmpty()]
         [string]$UserName,
         
-        [Parameter(mandatory)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory=$true,ParameterSetName='Cleartext')]
         [string]$Password,
 
-        [Parameter()]
+        [Parameter(Mandatory=$false,ParameterSetName='Cleartext')]
+        [Parameter(Mandatory=$false,ParameterSetName='Credential')]
         [ValidateSet('ApplicationDirectory','Domain','Machine')]
         [string]$ContextType = 'Domain',
 
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory=$false,ParameterSetName='Cleartext')]
+        [Parameter(Mandatory=$false,ParameterSetName='Credential')]
         [String]$Server
     )
     
-    Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-    if($PSBoundParameters.ContainsKey('Server'))
-    {
-        $PrincipalContext = New-Object System.DirectoryServices.AccountManagement.PrincipalContext($ContextType,$Server)
+    try {
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement -ErrorAction Stop
+        if($PSCmdlet.ParameterSetName -eq 'ClearText') {
+            $EncPassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+            $Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $UserName,$EncPassword
+        }
+        try {
+            if($PSBoundParameters.ContainsKey('Server'))
+            {
+                $PrincipalContext = New-Object System.DirectoryServices.AccountManagement.PrincipalContext($ContextType,$Server)
+            }
+            else
+            {
+                $PrincipalContext = New-Object System.DirectoryServices.AccountManagement.PrincipalContext($ContextType)
+            }
+        }
+        catch {
+            $_ | Write-Error -Message 'Failed to connect' -ErrorAction Stop
+        }
+        try
+        {
+            $PrincipalContext.ValidateCredentials($Credential.UserName, $Credential.GetNetworkCredential().Password,'Negotiate')
+        }
+        catch [UnauthorizedAccessException]
+        {
+            Write-Warning -Message "Access denied when connecting to server."
+        }
+        catch
+        {
+            Write-Error -Exception $_.Exception -Message "Unhandled error occured"
+        }
     }
-    else
-    {
-        $PrincipalContext = New-Object System.DirectoryServices.AccountManagement.PrincipalContext($ContextType)
-    }
-    Try
-    {
-        $PrincipalContext.ValidateCredentials($UserName, $Password,'Negotiate')
-    }
-    Catch [UnauthorizedAccessException]
-    {
-        Write-Warning -Message "Access denied when connecting to server."
-    }
-    Catch
-    {
-        Write-Error -Exception $_.Exception -Message "Unhandled error occured"
+    catch {
+        throw
     }
 }
 

@@ -1564,7 +1564,7 @@ function Test-SWADCredential
             }
         }
         catch {
-            $_ | Write-Error -Message 'Failed to connect' -ErrorAction Stop
+            Write-Error -Message "Failed to connect to server using contect: $ContextType"
         }
         try
         {
@@ -1573,6 +1573,7 @@ function Test-SWADCredential
         catch [UnauthorizedAccessException]
         {
             Write-Warning -Message "Access denied when connecting to server."
+            return $false
         }
         catch
         {
